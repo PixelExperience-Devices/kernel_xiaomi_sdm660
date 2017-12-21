@@ -1193,7 +1193,8 @@ EXPORT_SYMBOL_GPL(hrtimer_active);
 
 static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
 			  struct hrtimer_clock_base *base,
-			  struct hrtimer *timer, ktime_t *now)
+			  struct hrtimer *timer, ktime_t *now,
+			  unsigned long flags)
 {
 	enum hrtimer_restart (*fn)(struct hrtimer *);
 	int restart;
@@ -1228,11 +1229,11 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
 	 * they get migrated to another cpu, therefore its safe to unlock
 	 * the timer base.
 	 */
-	raw_spin_unlock(&cpu_base->lock);
+	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
 	trace_hrtimer_expire_entry(timer, now);
 	restart = fn(timer);
 	trace_hrtimer_expire_exit(timer);
-	raw_spin_lock(&cpu_base->lock);
+	raw_spin_lock_irq(&cpu_base->lock);
 
 	/*
 	 * Note: We clear the running state after enqueue_hrtimer and
@@ -1260,7 +1261,8 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
 	cpu_base->running = NULL;
 }
 
-static void __hrtimer_run_queues(struct hrtimer_cpu_base *cpu_base, ktime_t now)
+static void __hrtimer_run_queues(struct hrtimer_cpu_base *cpu_base, ktime_t now,
+				 unsigned long flags)
 {
 	struct hrtimer_clock_base *base = cpu_base->clock_base;
 	unsigned int active = cpu_base->active_bases;
@@ -1294,7 +1296,7 @@ static void __hrtimer_run_queues(struct hrtimer_cpu_base *cpu_base, ktime_t now)
 			if (basenow.tv64 < hrtimer_get_softexpires_tv64(timer))
 				break;
 
-			__run_hrtimer(cpu_base, base, timer, &basenow);
+			__run_hrtimer(cpu_base, base, timer, &basenow, flags);
 		}
 	}
 }
@@ -1309,13 +1311,14 @@ void hrtimer_interrupt(struct clock_event_device *dev)
 {
 	struct hrtimer_cpu_base *cpu_base = this_cpu_ptr(&hrtimer_bases);
 	ktime_t expires_next, now, entry_time, delta;
+	unsigned long flags;
 	int retries = 0;
 
 	BUG_ON(!cpu_base->hres_active);
 	cpu_base->nr_events++;
 	dev->next_event.tv64 = KTIME_MAX;
 
-	raw_spin_lock(&cpu_base->lock);
+	raw_spin_lock_irqsave(&cpu_base->lock, flags);
 	entry_time = now = hrtimer_update_base(cpu_base);
 retry:
 	cpu_base->in_hrtirq = 1;
@@ -1328,7 +1331,7 @@ retry:
 	 */
 	cpu_base->expires_next.tv64 = KTIME_MAX;
 
-	__hrtimer_run_queues(cpu_base, now);
+	__hrtimer_run_queues(cpu_base, now, flags);
 
 	/* Reevaluate the clock bases for the next expiry */
 	expires_next = __hrtimer_get_next_event(cpu_base);
@@ -1338,7 +1341,7 @@ retry:
 	 */
 	cpu_base->expires_next = expires_next;
 	cpu_base->in_hrtirq = 0;
-	raw_spin_unlock(&cpu_base->lock);
+	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
 
 	/* Reprogramming necessary ? */
 	if (!tick_program_event(expires_next, 0)) {
@@ -1359,7 +1362,7 @@ retry:
 	 * Acquire base lock for updating the offsets and retrieving
 	 * the current time.
 	 */
-	raw_spin_lock(&cpu_base->lock);
+	raw_spin_lock_irqsave(&cpu_base->lock, flags);
 	now = hrtimer_update_base(cpu_base);
 	cpu_base->nr_retries++;
 	if (++retries < 3)
@@ -1372,7 +1375,8 @@ retry:
 	 */
 	cpu_base->nr_hangs++;
 	cpu_base->hang_detected = 1;
-	raw_spin_unlock(&cpu_base->lock);
+	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
+
 	delta = ktime_sub(now, entry_time);
 	if ((unsigned int)delta.tv64 > cpu_base->max_hang_time)
 		cpu_base->max_hang_time = (unsigned int) delta.tv64;
@@ -1417,6 +1421,7 @@ static inline void __hrtimer_peek_ahead_timers(void) { }
 void hrtimer_run_queues(void)
 {
 	struct hrtimer_cpu_base *cpu_base = this_cpu_ptr(&hrtimer_bases);
+	unsigned long flags;
 	ktime_t now;
 
 	if (__hrtimer_hres_active(cpu_base))
@@ -1434,10 +1439,10 @@ void hrtimer_run_queues(void)
 		return;
 	}
 
-	raw_spin_lock(&cpu_base->lock);
+	raw_spin_lock_irqsave(&cpu_base->lock, flags);
 	now = hrtimer_update_base(cpu_base);
-	__hrtimer_run_queues(cpu_base, now);
-	raw_spin_unlock(&cpu_base->lock);
+	__hrtimer_run_queues(cpu_base, now, flags);
+	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
 }
 
 /*
