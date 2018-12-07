@@ -1283,5 +1283,6 @@
 		qcom,ulps-enabled;
 		qcom,suspend-ulps-enabled;
 		qcom,panel-ack-disabled;
+                qcom,partial-update-enabled
 	};
 };
