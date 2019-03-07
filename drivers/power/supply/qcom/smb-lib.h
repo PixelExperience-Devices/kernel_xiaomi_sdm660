@@ -372,7 +372,6 @@ struct smb_charger {
 	struct delayed_work	check_vbus_work;
 #endif
 #ifdef CONFIG_MACH_XIAOMI_CLOVER
-	struct delayed_work	update_current_work;
 	struct delayed_work	typec_disable_cmd_work;
 #endif
 
