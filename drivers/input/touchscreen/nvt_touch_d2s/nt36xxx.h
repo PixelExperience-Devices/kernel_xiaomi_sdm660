@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2010 - 2017 Novatek, Inc.
- * Copyright (C) 2019 XiaoMi, Inc.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * $Revision: 14061 $
  * $Date: 2017-07-06 15:45:15 +0800 (周四, 06 七月 2017) $
@@ -26,6 +26,9 @@
 #include <linux/earlysuspend.h>
 #endif
 
+#define tianma_jdi_flag 0
+#define NVT_DEBUG 1
+
 
 #define NVTTOUCH_INT_PIN 943
 
@@ -42,8 +45,12 @@
 #define I2C_FW_Address 0x01
 #define I2C_HW_Address 0x62
 
-#define NVT_LOG(fmt, args...)    pr_debug("[%s] %s %d: " fmt, NVT_I2C_NAME, __func__, __LINE__, ##args)
-#define NVT_ERR(fmt, args...)    pr_debug("[%s] %s %d: " fmt, NVT_I2C_NAME, __func__, __LINE__, ##args)
+#if NVT_DEBUG
+#define NVT_LOG(fmt, args...)    pr_err("[%s] %s %d: " fmt, NVT_I2C_NAME, __func__, __LINE__, ##args)
+#else
+#define NVT_LOG(fmt, args...)    pr_info("[%s] %s %d: " fmt, NVT_I2C_NAME, __func__, __LINE__, ##args)
+#endif
+#define NVT_ERR(fmt, args...)    pr_err("[%s] %s %d: " fmt, NVT_I2C_NAME, __func__, __LINE__, ##args)
 
 
 #define NVT_TS_NAME "NVTCapacitiveTouchScreen"
@@ -60,21 +67,18 @@ extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 #define TOUCH_FORCE_NUM 1000
 
 
-#define NVT_TOUCH_PROC 0
-#define NVT_TOUCH_EXT_PROC 0
-#define NVT_TOUCH_MP 0
+#define NVT_TOUCH_PROC 1
+#define NVT_TOUCH_EXT_PROC 1
+#define NVT_TOUCH_MP 1
 #define MT_PROTOCOL_B 1
 #define WAKEUP_GESTURE 1
 #if WAKEUP_GESTURE
 extern const uint16_t gesture_key_array[];
 #endif
-#define BOOT_UPDATE_FIRMWARE 0
+#define BOOT_UPDATE_FIRMWARE 1
 #define BOOT_UPDATE_FIRMWARE_NAME_TIANMA "novatek/tianma_nt36672_miui_d2s.bin"
 #define BOOT_UPDATE_FIRMWARE_NAME_JDI "novatek/jdi_nt36672_miui_d2s.bin"
 
-
-#define NVT_TOUCH_ESD_PROTECT 0
-#define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
 
 struct nvt_ts_mem_map {
 	uint32_t EVENT_BUF_ADDR;
@@ -168,8 +172,5 @@ extern int32_t nvt_check_fw_reset_state(RST_COMPLETE_STATE check_reset_state);
 extern int32_t nvt_get_fw_info(void);
 extern int32_t nvt_clear_fw_status(void);
 extern int32_t nvt_check_fw_status(void);
-#if NVT_TOUCH_ESD_PROTECT
-extern void nvt_esd_check_enable(uint8_t enable);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
 
 #endif /* _LINUX_NVT_TOUCH_H */
