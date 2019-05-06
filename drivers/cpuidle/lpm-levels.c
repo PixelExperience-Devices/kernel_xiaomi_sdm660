@@ -44,7 +44,6 @@
 #include <soc/qcom/event_timer.h>
 #include <soc/qcom/lpm-stats.h>
 #include <soc/qcom/jtag.h>
-#include <soc/qcom/minidump.h>
 #include <asm/cputype.h>
 #include <asm/arch_timer.h>
 #include <asm/cacheflush.h>
@@ -87,9 +86,6 @@ static DEFINE_PER_CPU(struct lpm_cluster*, cpu_cluster);
 static bool suspend_in_progress;
 static struct hrtimer lpm_hrtimer;
 static DEFINE_PER_CPU(struct hrtimer, histtimer);
-static struct lpm_debug *lpm_debug;
-static phys_addr_t lpm_debug_phys;
-static const int num_dbg_elements = 0x100;
 static int lpm_cpu_callback(struct notifier_block *cpu_nb,
 				unsigned long action, void *hcpu);
 
@@ -1817,7 +1813,6 @@ static const struct platform_suspend_ops lpm_suspend_ops = {
 static int lpm_probe(struct platform_device *pdev)
 {
 	int ret;
-	int size;
 	unsigned int cpu;
 	struct hrtimer *cpu_histtimer;
 	struct kobject *module_kobj = NULL;
