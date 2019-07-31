@@ -121,7 +121,7 @@ android/configs/android-*.cfg
 /compile_commands.json
 
 out/
-k.sh
+*.sh
 clang-llvm/
 AnyKernel2/
 error.log
