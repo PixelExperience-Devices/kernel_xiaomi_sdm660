@@ -68,7 +68,6 @@ bool su_running(void);
 bool su_visible(void);
 void su_exec(void);
 void su_exit(void);
-extern bool energy_aware_enable;
 
 #if defined(CONFIG_SCHED_TUNE) && defined(CONFIG_CGROUP_SCHEDTUNE)
 void disable_schedtune_boost(int disable);
