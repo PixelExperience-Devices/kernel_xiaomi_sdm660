@@ -2878,6 +2878,7 @@ static inline void update_cfs_group(struct sched_entity *se)
 }
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 
+#ifdef CONFIG_SMP
 u32 sched_get_wake_up_idle(struct task_struct *p)
 {
 	return 0;
