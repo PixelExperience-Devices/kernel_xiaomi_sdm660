@@ -291,3 +291,9 @@ config FILE_TABLE_DEBUG
 	  This option enables debug of the open files using a global filetable
 
 endmenu
+
+config VFS_CACHE_PRESSURE
+	int "Configure vfs cache pressure"
+	default 100
+	help
+	 This option allows you to adjust vfs cache pressure.
