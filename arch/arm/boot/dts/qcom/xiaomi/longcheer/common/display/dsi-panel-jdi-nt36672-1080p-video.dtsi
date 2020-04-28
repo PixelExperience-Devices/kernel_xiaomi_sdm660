@@ -16,7 +16,7 @@
 		qcom,mdss-dsi-panel-name = "jdi nt36672 fhd video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
-		qcom,mdss-dsi-panel-framerate = <66>;
+                qcom,mdss-dsi-panel-framerate = <60>;
 		qcom,mdss-dsi-virtual-channel-id = <0>;
 		qcom,mdss-dsi-stream = <0>;
 		qcom,mdss-dsi-panel-width = <1080>;
@@ -59,6 +59,8 @@
 		qcom,mdss-dsi-pan-enable-dynamic-bitclk;
 		qcom,mdss-dsi-dynamic-bitclk_freq = <798240576 801594528 804948480
 		808302432 811656384>;
+                qcom,mdss-dsi-pan-enable-dynamic-fps;
+                qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
 		qcom,mdss-dsi-panel-hdr-enabled;
 		qcom,mdss-dsi-panel-hdr-color-primaries = <14500 15500 32000
 			17000 15500 30000 8000 3000>;
