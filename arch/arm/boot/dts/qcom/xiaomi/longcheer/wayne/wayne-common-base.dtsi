@@ -32,7 +32,7 @@
 };
 
 &pm660_charger {
-	qcom,usb-icl-ua = <2900000>;
+	qcom,usb-icl-ua = <3300000>;
 	qcom,otg-cl-ua = <1500000>;
 	qcom,dc-icl-ua = <2900000>;
 	qcom,fcc-max-ua = <2900000>;
