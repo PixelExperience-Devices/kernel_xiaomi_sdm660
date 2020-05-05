@@ -1283,7 +1283,7 @@
 		qcom,ulps-enabled;
 		qcom,suspend-ulps-enabled;
 		qcom,panel-ack-disabled;
-                qcom,partial-update-enabled
+                qcom,partial-update-enabled;
                 qcom,panel-roi-alignment = <2 2 4 2 1080 2>;
 	};
 };
