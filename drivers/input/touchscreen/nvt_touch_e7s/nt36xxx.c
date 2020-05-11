@@ -41,8 +41,6 @@
 #include <linux/jiffies.h>
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
-#include "../lct_tp_gesture.h"
-
 #if NVT_TOUCH_ESD_PROTECT
 static struct delayed_work nvt_esd_check_work;
 static struct workqueue_struct *nvt_esd_check_wq;
@@ -74,6 +72,9 @@ static int fb_notifier_callback(struct notifier_block *self, unsigned long event
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 static void nvt_ts_early_suspend(struct early_suspend *h);
 static void nvt_ts_late_resume(struct early_suspend *h);
+#endif
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
 #endif
 
 static const struct nvt_ts_mem_map NT36772_memory_map = {
@@ -267,6 +268,32 @@ int nvt_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int co
 	return 0;
 }
 
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+static ssize_t double_tap_show(struct kobject *kobj,
+			       struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", enable_gesture_mode);
+}
+
+static ssize_t double_tap_store(struct kobject *kobj,
+				struct kobj_attribute *attr, const char *buf,
+				size_t count)
+{
+	int rc, val;
+
+	rc = kstrtoint(buf, 10, &val);
+	if (rc)
+		return -EINVAL;
+
+	enable_gesture_mode = !!val;
+	return count;
+}
+
+static struct tp_common_ops double_tap_ops = {
+	.show = double_tap_show,
+	.store = double_tap_store
+};
+#endif
 #endif
 
 static uint8_t bTouchIsAwake = 0;
@@ -1181,23 +1208,6 @@ out:
 	return ret;
 }
 
-static int lct_tp_gesture_node_callback(bool flag)
-{
-	if (suspend_state) {
-		NVT_ERR("ERROR: TP is suspend!\n");
-		return -1;
-	}
-	if(flag) {
-		enable_gesture_mode = true;
-		NVT_LOG("enable gesture mode\n");
-	} else {
-		enable_gesture_mode = false;
-		NVT_LOG("disable gesture mode\n");
-	}
-	return 0;
-}
-
-
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
@@ -1329,6 +1339,13 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 		input_set_capability(ts->input_dev, EV_KEY, gesture_key_array[retry]);
 	}
 	wake_lock_init(&gestrue_wakelock, WAKE_LOCK_SUSPEND, "poll-wake-lock");
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	ret = tp_common_set_double_tap_ops(&double_tap_ops);
+	if (ret < 0) {
+		NVT_ERR("%s: Failed to create double_tap node err=%d\n",
+			__func__, ret);
+	}
+#endif
 #endif
 
 	sprintf(ts->phys, "input/ts");
@@ -1380,11 +1397,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
 			msecs_to_jiffies(NVT_TOUCH_ESD_CHECK_PERIOD));
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
-
-	ret = init_lct_tp_gesture(lct_tp_gesture_node_callback);
-	if (ret < 0) {
-		NVT_ERR("Failed to add /proc/tp_work node!\n");
-	}
 
 #if NVT_TOUCH_PROC
 	ret = nvt_flash_proc_init();
