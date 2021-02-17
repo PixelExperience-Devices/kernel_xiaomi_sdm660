@@ -823,7 +823,7 @@ static __always_inline void old_rcu_barrier(void)
 #define COMPAT_CANNOT_DEPRECIATE_BH_RCU
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 10) && !defined(ISRHEL8)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 10) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0) && !defined(ISRHEL8)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 217)
 static inline void skb_mark_not_on_list(struct sk_buff *skb)
 {
 	skb->next = NULL;
@@ -1066,6 +1066,22 @@ static const struct header_ops ip_tunnel_header_ops = { .parse_protocol = ip_tun
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
 #define kfree_sensitive(a) kzfree(a)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(ISRHEL7)
+#define xchg_release xchg
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0) && !defined(ISRHEL7)
+#include <asm/barrier.h>
+#ifndef smp_load_acquire
+#define smp_load_acquire(p)                                            \
+({                                                                     \
+       typeof(*p) ___p1 = ACCESS_ONCE(*p);                             \
+       smp_mb();                                                       \
+       ___p1;                                                          \
+})
+#endif
 #endif
 
 #if defined(ISUBUNTU1604) || defined(ISRHEL7)
